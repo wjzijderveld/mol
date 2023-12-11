@@ -56,3 +56,8 @@ impl<'config> Store<'config> {
         Ok(ApiKey::try_from(answer)?)
     }
 }
+
+#[derive(Debug)]
+pub struct SorryCouldNotRetrieveApiKey {
+    pub error_message: String,
+}
