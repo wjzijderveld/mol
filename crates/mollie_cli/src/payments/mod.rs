@@ -1,15 +1,14 @@
-use super::config;
 use std::fmt::Display;
 
 use crate::config::ConfigurationService;
 use clap::{Parser, Subcommand};
 use colored::Colorize;
 use mollie_api::models::payment::PaymentResource;
+mod cancel;
 mod create;
 mod get;
 mod list;
 mod refund;
-mod cancel;
 
 #[derive(Parser)]
 #[clap(version, about, arg_required_else_help(true))]
@@ -77,9 +76,7 @@ pub enum PaymentsCommands {
 
     ///Cancel a Payment
     #[clap(arg_required_else_help(true))]
-    Cancel {
-        id: String
-    }
+    Cancel { id: String },
 }
 
 pub async fn command(
@@ -156,12 +153,15 @@ pub struct Payment {
 
 impl Payment {
     pub fn header() -> String {
-        format!("|{:^14} {:^4} {:^12} {:^26} {:^30} {} |", "ID", "MODE", "AMOUNT", "CREATED_AT", "DESCITPION", "REDIRECT_URL")
+        format!(
+            "|{:^14} {:^4} {:^12} {:^26} {:^30} {} |",
+            "ID", "MODE", "AMOUNT", "CREATED_AT", "DESCITPION", "REDIRECT_URL"
+        )
     }
 }
 
 impl From<PaymentResource> for Payment {
-    fn from(payment: PaymentResource) -> Self{
+    fn from(payment: PaymentResource) -> Self {
         Self {
             id: payment.id,
             mode: payment.mode,
@@ -179,8 +179,16 @@ impl Display for Payment {
         write!(
             f,
             "{} | {} | {} | {} | {} | {}  ",
-            if self.status == "active" { Colorize::green(&*self.id) } else { Colorize::blink(&*self.id) },
-            if self.mode == "live" { Colorize::bright_green("LIVE") } else { Colorize::bright_black("TEST") },
+            if self.status == "active" {
+                Colorize::green(&*self.id)
+            } else {
+                Colorize::blink(&*self.id)
+            },
+            if self.mode == "live" {
+                Colorize::bright_green("LIVE")
+            } else {
+                Colorize::bright_black("TEST")
+            },
             Colorize::green(&*self.amount.to_string()),
             Colorize::blue(&*self.created_at),
             self.description,

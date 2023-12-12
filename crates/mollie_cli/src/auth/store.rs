@@ -3,22 +3,22 @@ use mollie_api::auth::{AccessCode, ApiKey, ApiKeyMode};
 use requestty::Question;
 
 pub struct Store<'config> {
-    config_service: &'config mut dyn ConfigurationService,
+    config_service: &'config dyn ConfigurationService,
 }
 
 impl<'config> Store<'config> {
-    pub fn new(config: &'config mut dyn ConfigurationService) -> Self {
+    pub fn new(config: &'config dyn ConfigurationService) -> Self {
         Self {
             config_service: config,
         }
     }
 
-    pub fn interactive(&mut self) -> anyhow::Result<()> {
+    pub fn interactive(&self) -> anyhow::Result<()> {
         let new_api_key = self.ask_api_key()?;
         self.store_api_key(new_api_key)
     }
 
-    pub fn store_api_key(&mut self, new_api_key: ApiKey) -> anyhow::Result<()> {
+    pub fn store_api_key(&self, new_api_key: ApiKey) -> anyhow::Result<()> {
         self.config_service.update(&|config| {
             let api_keys = config.auth.api_keys.get_or_insert(ApiKeysConfig::default());
             match new_api_key.mode {

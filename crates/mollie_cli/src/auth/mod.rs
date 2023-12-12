@@ -35,7 +35,7 @@ pub enum AuthCommands {
 
 pub async fn command(
     command: &AuthCommand,
-    config_service: &mut dyn ConfigurationService,
+    config_service: &dyn ConfigurationService,
 ) -> anyhow::Result<()> {
     match command.command.as_ref() {
         Some(AuthCommands::Add {

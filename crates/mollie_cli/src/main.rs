@@ -11,7 +11,6 @@ mod logger;
 mod org;
 mod payments;
 
-
 #[derive(Parser)]
 #[clap(version, about, arg_required_else_help(true))]
 struct Cli {
@@ -25,7 +24,7 @@ struct Cli {
 
     /// Print the API response after performing an API call
     #[clap(long = "withResponse", global = true)]
-    with_response: bool
+    with_response: bool,
 }
 
 #[derive(Subcommand)]
@@ -50,10 +49,10 @@ async fn main() -> anyhow::Result<()> {
         debug!("Debug mode enabled");
     }
 
-    let mut config_service = FigmentConfigurationService::new();
+    let config_service = FigmentConfigurationService::new();
 
     match cli.command {
-        Some(Commands::Auth(command)) => auth::command(&command, &mut config_service).await?,
+        Some(Commands::Auth(command)) => auth::command(&command, &config_service).await?,
         Some(Commands::Balances(command)) => balances::command(&command, &config_service).await?,
         Some(Commands::Org(command)) => org::command(&command, &config_service).await?,
         Some(Commands::Payments(command)) => payments::command(&command, &config_service).await?,
