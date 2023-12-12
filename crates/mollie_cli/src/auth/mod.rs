@@ -2,18 +2,10 @@ use crate::config::{ConfigurationService, ConnectConfig};
 use clap::{Parser, Subcommand};
 use log::{info, error};
 use mollie_api::auth::{AccessCode, ApiKey};
-<<<<<<< HEAD
 use oauth2::basic::BasicClient;
 use oauth2::{AuthorizationCode, AuthUrl, ClientId, ClientSecret, CsrfToken, Scope, TokenUrl, TokenResponse};
 use oauth2::reqwest::async_http_client;
 use reqwest::Url;
-||||||| parent of f5867e3 (add basic OAuth client)
-=======
-use oauth2::basic::BasicClient;
-use oauth2::{AuthorizationCode, AuthUrl, ClientId, ClientSecret, CsrfToken, Scope, TokenUrl};
-use oauth2::reqwest::async_http_client;
-use reqwest::Url;
->>>>>>> f5867e3 (add basic OAuth client)
 
 mod store;
 
@@ -68,7 +60,7 @@ pub enum AuthConnectFinishCommand {
 pub async fn command(
     command: &AuthCommand,
     config_service: &dyn ConfigurationService,
-) -> anyhow::Result<()> {
+) -> miette::Result<()> {
     match command.command.as_ref() {
         Some(AuthCommands::Add {
             interactive,
