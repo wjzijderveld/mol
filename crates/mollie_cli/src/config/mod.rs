@@ -8,7 +8,7 @@ use log::debug;
 use miette::miette;
 use std::fs;
 use std::path::PathBuf;
-use std::sync::OnceLock;
+use std::sync::{Arc, RwLock};
 
 pub use crate::config::config::*;
 
@@ -16,18 +16,18 @@ mod config;
 mod error;
 
 pub trait ConfigurationService {
-    fn read(&self) -> &MollieConfig;
-    fn update(&mut self, updater: &dyn Fn(&mut MollieConfig)) -> ConfigResult<MollieConfig>;
+    fn read(&self) -> Arc<MollieConfig>;
+    fn update(&self, updater: &dyn Fn(&mut MollieConfig)) -> ConfigResult<Arc<MollieConfig>>;
 }
 
 pub struct FigmentConfigurationService {
-    config: OnceLock<MollieConfig>,
+    cache: RwLock<Option<Arc<MollieConfig>>>,
 }
 
 impl FigmentConfigurationService {
     pub fn new() -> Self {
         Self {
-            config: OnceLock::new(),
+            cache: RwLock::new(None),
         }
     }
 
@@ -81,42 +81,63 @@ impl FigmentConfigurationService {
             error.kind,
         )
     }
+
+    fn read_figment_configuration() -> MollieConfig {
+        // Figment's test mode can only read config files from the current working directory.
+        let figment = if cfg!(test) {
+            Figment::new().merge(Toml::file("conf.toml"))
+        } else {
+            Figment::new().merge(Toml::file(Self::config_path()))
+        };
+
+        figment
+            .merge(Env::prefixed("MOLLIE_").map(Self::map_env_variables))
+            .extract::<MollieConfig>()
+            .map_err(Self::create_diagnostic)
+            .expect("Failed to load configuration, error code:")
+    }
 }
 
 impl ConfigurationService for FigmentConfigurationService {
-    fn read(&self) -> &MollieConfig {
-        self.config.get_or_init(|| {
-            // Figment's test mode can only read config files from the current working directory.
-            let figment = if cfg!(test) {
-                Figment::new().merge(Toml::file("conf.toml"))
-            } else {
-                Figment::new().merge(Toml::file(Self::config_path()))
-            };
+    fn read(&self) -> Arc<MollieConfig> {
+        // First, we try to read the configuration from the cache. If it's not there, we'll need to
+        // re-acquire the lock as a write-lock for initialization.
+        {
+            let cache = self.cache.read().expect("Configuration lock is poisoned");
 
-            figment
-                .merge(Env::prefixed("MOLLIE_").map(Self::map_env_variables))
-                .extract::<MollieConfig>()
-                .map_err(Self::create_diagnostic)
-                .expect("Failed to load configuration, error code:")
-        })
+            if let Some(config) = &*cache {
+                return config.clone();
+            }
+        }
+
+        let mut cache = self.cache.write().expect("Configuration lock is poisoned");
+
+        let new_config = Arc::new(Self::read_figment_configuration());
+        *cache = Some(new_config.clone());
+        new_config
     }
 
-    fn update(&mut self, updater: &dyn Fn(&mut MollieConfig)) -> ConfigResult<MollieConfig> {
-        let mut config = self.read().clone();
-        updater(&mut config);
+    fn update(&self, updater: &dyn Fn(&mut MollieConfig)) -> ConfigResult<Arc<MollieConfig>> {
+        let mut cache = self.cache.write().expect("Configuration lock is poisoned");
+        let mut new_config = cache
+            .as_deref()
+            .cloned()
+            .unwrap_or_else(Self::read_figment_configuration);
 
+        updater(&mut new_config);
         let path = Self::config_path();
-        let new_config = toml::to_string_pretty(&config)?;
-
         if let Some(parent) = path.parent() {
             fs::create_dir_all(parent)?;
         }
-        fs::write(&path, new_config)?;
-        self.config.take();
+        let new_config_contents = toml::to_string_pretty(&new_config)?;
+        fs::write(&path, new_config_contents)?;
+
+        let new_config = Arc::new(new_config);
+        *cache = Some(new_config.clone());
 
         debug!("Saved configuration file to {}", path.to_string_lossy());
 
-        Ok(config)
+        Ok(new_config)
     }
 }
 
@@ -155,7 +176,7 @@ mod test {
             let config = service.read();
 
             assert_eq!(
-                config,
+                config.as_ref(),
                 &MollieConfig {
                     api: ApiConfig {
                         url: Url::parse("https://test.com/").unwrap(),
@@ -217,7 +238,7 @@ mod test {
             let config = service.read();
 
             assert_eq!(
-                config,
+                config.as_ref(),
                 &MollieConfig {
                     api: ApiConfig {
                         url: Url::parse("https://env.com/").unwrap(),
@@ -268,7 +289,7 @@ mod test {
             let config = service.read();
 
             assert_eq!(
-                config,
+                config.as_ref(),
                 &MollieConfig {
                     api: ApiConfig {
                         url: Url::parse("https://env.com/").unwrap(),

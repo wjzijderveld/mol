@@ -4,9 +4,11 @@ use log::{debug, info, warn};
 use mollie_api::Mollie;
 use requestty::Question;
 use serde::Serialize;
+use colored::Colorize;
+use std::sync::Arc;
 
 pub async fn command(
-    config: &MollieConfig,
+    config: Arc<MollieConfig>,
     input_currency: Option<&String>,
     input_amount: Option<&String>,
     input_description: Option<&String>,
@@ -64,7 +66,7 @@ pub async fn interactive(config: &MollieConfig, debug: &bool) -> miette::Result<
     let redirect_url = ask_redirect_url().unwrap();
     // Webhook (Optional fields [...])
     // Profile ID - prompted only if auth is via access token
-    let profile_id = ask_profile_id(config).unwrap();
+    let profile_id = ask_profile_id(config.clone()).unwrap();
     let create_payment_request = mollie_api::models::payment::CreatePaymentRequest {
         amount: mollie_api::models::amount::Amount {
             currency: amount.currency,
@@ -229,7 +231,7 @@ fn ask_redirect_url() -> Result<String, SorryCouldNotCreatePayment> {
     }
 }
 
-fn ask_profile_id(config: &MollieConfig) -> Result<Option<String>, SorryCouldNotCreatePayment> {
+fn ask_profile_id(config: Arc<MollieConfig>) -> Result<Option<String>, SorryCouldNotCreatePayment> {
     if !config.auth.access_code.is_some() {
         return Ok(None);
     }

@@ -1,0 +1,30 @@
+<<<<<<< HEAD
+||||||| parent of c9d81c3 (Integrate with refactored config)
+use crate::config::MollieConfig;
+=======
+use crate::{config::MollieConfig, apiauth::CliAuthProvider};
+>>>>>>> c9d81c3 (Integrate with refactored config)
+use mollie_api::Mollie;
+
+<<<<<<< HEAD
+pub async fn command() -> anyhow::Result<()> {
+    let token = super::config::get_bearer_token().unwrap();
+    let response = Mollie::build(&token.value).organizations().me().await?;
+||||||| parent of c9d81c3 (Integrate with refactored config)
+pub async fn command(config: &MollieConfig) -> anyhow::Result<()> {
+    let token = config.bearer_token().unwrap();
+    let response = Mollie::build(token.get_token())
+        .organizations()
+        .me()
+        .await?;
+=======
+pub async fn command(config: &MollieConfig) -> anyhow::Result<()> {
+    let response = Mollie::build(&CliAuthProvider::new(config))
+        .organizations()
+        .me()
+        .await?;
+>>>>>>> c9d81c3 (Integrate with refactored config)
+    println!("Organization: {:#?}", response.id);
+    println!("{:#?}", response);
+    Ok(())
+}

@@ -4,6 +4,9 @@ use colored::Colorize;
 use colored_json::ToColoredJson;
 use log::{debug, info};
 use mollie_api::Mollie;
+use crate::payments::Payment;
+use crate::config::MollieConfig;
+use std::sync::Arc;
 
 pub async fn command(
     config: &MollieConfig,

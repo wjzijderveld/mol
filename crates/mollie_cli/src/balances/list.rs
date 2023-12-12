@@ -4,9 +4,10 @@ use colored::Colorize;
 use colored_json::ToColoredJson;
 use log::{debug, info};
 use mollie_api::Mollie;
+use std::sync::Arc;
 
 pub async fn command(
-    config: &MollieConfig,
+    config: Arc<MollieConfig>,
     limit: &Option<i32>,
     from: &Option<String>,
     with_response: bool,

@@ -1,4 +1,5 @@
 use crate::config::MollieConfig;
+use std::sync::Arc;
 
 use colored_json::ToColoredJson;
 use log::info;

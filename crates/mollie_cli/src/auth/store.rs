@@ -4,11 +4,11 @@ use mollie_api::auth::{AccessCode, ApiKey, ApiKeyMode};
 use requestty::Question;
 
 pub struct Store<'config> {
-    config_service: &'config mut dyn ConfigurationService,
+    config_service: &'config dyn ConfigurationService,
 }
 
 impl<'config> Store<'config> {
-    pub fn new(config: &'config mut dyn ConfigurationService) -> Self {
+    pub fn new(config: &'config dyn ConfigurationService) -> Self {
         Self {
             config_service: config,
         }

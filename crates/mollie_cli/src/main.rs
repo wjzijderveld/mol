@@ -49,10 +49,10 @@ async fn main() -> miette::Result<()> {
         debug!("Debug mode enabled");
     }
 
-    let mut config_service = FigmentConfigurationService::new();
+    let config_service = FigmentConfigurationService::new();
 
     match cli.command {
-        Some(Commands::Auth(command)) => auth::command(&command, &mut config_service).await?,
+        Some(Commands::Auth(command)) => auth::command(&command, &config_service).await?,
         Some(Commands::Balances(command)) => balances::command(&command, &config_service).await?,
         Some(Commands::Org(command)) => org::command(&command, &config_service).await?,
         Some(Commands::Payments(command)) => payments::command(&command, &config_service).await?,

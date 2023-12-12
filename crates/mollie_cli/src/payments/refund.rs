@@ -1,9 +1,10 @@
 use crate::config::MollieConfig;
 use colored_json::ToColoredJson;
 use mollie_api::Mollie;
+use std::sync::Arc;
 
 pub async fn command(
-    config: &MollieConfig,
+    config: Arc<MollieConfig>,
     payment_id: &String,
     amount: &f32,
     description: &String,

@@ -1,5 +1,6 @@
 use crate::config::MollieConfig;
 use mollie_api::Mollie;
+use std::sync::Arc;
 
 pub async fn command(config: &MollieConfig) -> miette::Result<()> {
     let token = config.bearer_token()?;
